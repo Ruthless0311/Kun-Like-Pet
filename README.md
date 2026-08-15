@@ -1,5 +1,8 @@
 # 🐤 Kun Like 桌宠
 
+> **原作者 / 上游项目：[liyupi/dsh-kun-like-pet](https://github.com/liyupi/dsh-kun-like-pet)**
+> 本仓库在其基础上扩展了系统级悬浮窗版本（WPF 透明置顶窗口，悬浮在所有应用之上）。
+
 > DeepSeek Harness（DSH）桌面宠物 —— 一只**悬浮在所有窗口之上**的小坤宠。
 > 它会盯着 Agent 干活：你搓代码时它努力搬砖，你思考时它托腮，等你回复时它翘首以盼，任务完成时它挥手跳跃、大喊 **「你干嘛~哎哟」** 🏀
 
