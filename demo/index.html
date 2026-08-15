@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Kun Like 桌宠 · 动画演示</title>
+<style>
+  :root { color-scheme: dark; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(160deg, #1c1f2e 0%, #2a2f45 55%, #3a3550 100%);
+    color: #e8e9f0;
+    overflow: hidden;
+  }
+  h1 { font-size: 20px; font-weight: 600; margin: 0; letter-spacing: 1px; }
+  .sub { font-size: 13px; color: #a9adc3; margin: 0; }
+  .stage {
+    position: relative;
+    width: 480px;
+    height: 360px;
+    border: 1px dashed rgba(255,255,255,0.18);
+    border-radius: 20px;
+    background: rgba(255,255,255,0.04);
+    overflow: hidden;
+  }
+  .pet {
+    position: absolute;
+    right: 24px;
+    bottom: 24px;
+    width: 163.2px;   /* 192 × 0.85 */
+    height: 176.8px;  /* 208 × 0.85 */
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+  }
+  .pet:active { cursor: grabbing; }
+  .pet .sprite {
+    position: absolute; inset: 0;
+    background-image: url('../assets/spritesheet.webp');
+    background-repeat: no-repeat;
+    background-size: 1305.6px 1591.2px; /* W×8, H×9 */
+    image-rendering: pixelated;
+  }
+  .pet .bubble {
+    position: absolute; left: 50%; bottom: 100%; margin-bottom: 12px;
+    transform: translateX(-50%);
+    background: rgba(255,255,255,0.96); color: #333;
+    border-radius: 12px; padding: 6px 12px; font-size: 13px;
+    white-space: nowrap; box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    pointer-events: none;
+  }
+  .pet .bubble::after {
+    content: ''; position: absolute; top: 100%; left: 50%;
+    transform: translateX(-50%);
+    border: 7px solid transparent; border-top-color: rgba(255,255,255,0.96);
+  }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 560px; }
+  .controls button {
+    appearance: none;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.08);
+    color: #e8e9f0;
+    padding: 7px 14px; border-radius: 999px;
+    font-size: 13px; cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .controls button:hover { background: rgba(255,255,255,0.16); }
+  .controls button.active { background: #ffd23f; color: #1c1f2e; border-color: #ffd23f; font-weight: 600; }
+  .hint { font-size: 12px; color: #8b90a8; }
+</style>
+</head>
+<body>
+  <h1>🐤 Kun Like 桌宠 · 动画演示</h1>
+  <p class="sub">8 列 × 9 行精灵图 · 9 种状态动画 · 可拖动 / 点击互动</p>
+
+  <div class="stage">
+    <div class="pet" id="pet" title="Kun Like 桌宠 · 拖动移动 · 点击互动">
+      <div class="sprite" id="sprite"></div>
+      <div class="bubble" id="bubble">休息中~ 有事叫我</div>
+    </div>
+  </div>
+
+  <div class="controls" id="controls"></div>
+  <p class="hint">在桌面宠身上按住拖动可移动（拖动时切换跑步动画）；点击它会挥手 ~</p>
+
+<script>
+  // —— 精灵图契约（与 src/client.js 完全一致）——
+  const CW = 192, CH = 208, SCALE = 0.85
+  const W = CW * SCALE, H = CH * SCALE
+
+  const ROWS = {
+    idle:      { row: 0, count: 6, frames: [280, 110, 110, 140, 140, 320], label: '待机 idle',           bubble: '休息中~ 有事叫我' },
+    runRight:  { row: 1, count: 8, frames: [120, 120, 120, 120, 120, 120, 120, 220], label: '向右跑 runRight', bubble: '呜哇~ 别拽我！' },
+    runLeft:   { row: 2, count: 8, frames: [120, 120, 120, 120, 120, 120, 120, 220], label: '向左跑 runLeft', bubble: '呜哇~ 别拽我！' },
+    wave:      { row: 3, count: 4, frames: [140, 140, 140, 280], label: '挥手 wave',           bubble: '诶嘿~' },
+    jump:      { row: 4, count: 5, frames: [140, 140, 140, 140, 280], label: '跳跃 jump',      bubble: '完成啦！你干嘛~哎哟' },
+    failed:    { row: 5, count: 8, frames: [140, 140, 140, 140, 140, 140, 140, 240], label: '出错 failed', bubble: '呜…出错了 (._.)' },
+    waiting:   { row: 6, count: 6, frames: [150, 150, 150, 150, 150, 260], label: '等待 waiting', bubble: '在等你回复哦~' },
+    working:   { row: 7, count: 6, frames: [120, 120, 120, 120, 120, 220], label: '工作 working', bubble: '努力工作中…' },
+    review:    { row: 8, count: 6, frames: [150, 150, 150, 150, 150, 280], label: '思考 review', bubble: '思考中…' },
+  }
+
+  const sprite = document.getElementById('sprite')
+  const bubble = document.getElementById('bubble')
+  const pet = document.getElementById('pet')
+  const controls = document.getElementById('controls')
+
+  let current = 'idle'
+  let frame = 0
+  let timer = null
+  let reaction = null
+
+  function play(anim, isReaction) {
+    const spec = ROWS[anim] || ROWS.idle
+    if (!isReaction) current = anim
+    bubble.textContent = spec.bubble
+    frame = 0
+    clearTimeout(timer)
+    const step = (i) => {
+      frame = i
+      sprite.style.backgroundPosition = (-(i % spec.count) * W) + 'px ' + (-spec.row * H) + 'px'
+      timer = setTimeout(() => step((i + 1) % spec.count), spec.frames[i] || 150)
+    }
+    step(0)
+  }
+
+  // 控制按钮
+  for (const [key, spec] of Object.entries(ROWS)) {
+    const btn = document.createElement('button')
+    btn.textContent = spec.label
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#controls button').forEach(b => b.classList.remove('active'))
+      btn.classList.add('active')
+      play(key, false)
+    })
+    if (key === 'idle') btn.classList.add('active')
+    controls.appendChild(btn)
+  }
+
+  // 拖动
+  let drag = null
+  pet.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return
+    pet.setPointerCapture(e.pointerId)
+    drag = { x: e.clientX, y: e.clientY, left: pet.offsetLeft, top: pet.offsetTop, moved: false }
+  })
+  pet.addEventListener('pointermove', (e) => {
+    if (!drag) return
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) drag.moved = true
+    const anim = dx > 4 ? 'runRight' : dx < -4 ? 'runLeft' : current
+    if (dx !== 0) play(anim, true)
+    const stage = pet.parentElement.getBoundingClientRect()
+    pet.style.left = Math.min(Math.max(drag.left + dx, -W * 0.7), stage.width - W * 0.3) + 'px'
+    pet.style.top = Math.min(Math.max(drag.top + dy, -H * 0.5), stage.height - H * 0.5) + 'px'
+  })
+  const endDrag = () => {
+    const d = drag; drag = null
+    if (d && !d.moved) { play('wave', true); setTimeout(() => play(current, false), 2400) }
+    else if (!d || d.moved) play(current, false)
+  }
+  pet.addEventListener('pointerup', endDrag)
+  pet.addEventListener('pointercancel', endDrag)
+
+  play('idle', false)
+</script>
+</body>
+</html>

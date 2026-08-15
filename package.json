@@ -1,0 +1,31 @@
+{
+  "name": "dsh-kun-like-pet",
+  "version": "1.0.0",
+  "private": false,
+  "description": "Kun Like 桌宠 —— DeepSeek Harness 桌面宠物插件：Web 界面右下角的小坤宠，随 Agent 工作状态切换 9 种动作，任务完成时播放「你干嘛~哎哟」",
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "plugin",
+    "desktop-pet",
+    "kun",
+    "桌宠"
+  ],
+  "license": "MIT",
+  "author": "liyupi",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/liyupi/dsh-kun-like-pet.git"
+  },
+  "files": [
+    "src",
+    "assets",
+    "docs",
+    "demo",
+    "scripts",
+    "kunpet.package.json"
+  ],
+  "scripts": {
+    "test": "node scripts/validate.mjs"
+  }
+}
