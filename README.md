@@ -62,6 +62,7 @@
 > - 受限沙箱令牌会移除 INTERACTIVE SID，导致音频端点被拒（点击/庆祝语音无声），因此悬浮窗进程与语音播放命令使用 `danger-full-access`。
 > - 精灵图使用 `assets/spritesheet-clean.png`：原始 `spritesheet.webp` 的 alpha 通道在转码中丢失（黑底 + 绿幕毛边），clean 版已做透明化与绿边清除。
 > - 宿主 shell 服务会吞掉命令字符串中的 `$` 变量，因此语音播放逻辑必须放在 `desktop/play-voice.ps1` 脚本文件中，`playCommand` 以 `-File` 方式调用。
+> - 庆祝语音必须用 `shell.start` 后台启动播放——实测 `shell.run` 前台路径静音（同一脚本、同一会话、桌面/音频设备均正常）。
 > - macOS / Linux 需把 `CONFIG.playCommand` 换成对应播放命令（afplay / ffplay）。
 
 ### 方式二：DSH 网页版桌宠（早期版本）
