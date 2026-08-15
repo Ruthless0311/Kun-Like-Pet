@@ -61,6 +61,7 @@
 > - 宿主 shell 服务按 `sandboxPolicy` 工作：默认 workspace（`C:/Users/<user>`）包含系统 TEMP，`windows-acl-run` 会拒绝执行。本版本已为所有 shell 命令显式传入 `sandboxPolicy`（`danger-full-access` / `workspace-write`，workspace 指向会话工作区）。
 > - 受限沙箱令牌会移除 INTERACTIVE SID，导致音频端点被拒（点击/庆祝语音无声），因此悬浮窗进程与语音播放命令使用 `danger-full-access`。
 > - 精灵图使用 `assets/spritesheet-clean.png`：原始 `spritesheet.webp` 的 alpha 通道在转码中丢失（黑底 + 绿幕毛边），clean 版已做透明化与绿边清除。
+> - 宿主 shell 服务会吞掉命令字符串中的 `$` 变量，因此语音播放逻辑必须放在 `desktop/play-voice.ps1` 脚本文件中，`playCommand` 以 `-File` 方式调用。
 > - macOS / Linux 需把 `CONFIG.playCommand` 换成对应播放命令（afplay / ffplay）。
 
 ### 方式二：DSH 网页版桌宠（早期版本）
@@ -88,7 +89,7 @@
 | --- | --- | --- |
 | `spritePath` | `D:/KUN_pet/kunpet-sprite.png` | 精灵图路径（clean 版 PNG） |
 | `voicePath` | `…/assets/voice.mp3` | 完成音路径 |
-| `playCommand` | WMP COM（Windows） | 系统级播放命令（macOS：`afplay`；Linux：`ffplay -nodisp -autoexit`） |
+| `playCommand` | `powershell -File desktop/play-voice.ps1`（Windows） | 系统级播放命令（macOS：`afplay`；Linux：`ffplay -nodisp -autoexit`） |
 | `desktopScriptPath` | `…/desktop/kunpet-desktop.ps1` | 悬浮窗脚本路径 |
 | `pollMs` | `500` | Agent 状态轮询间隔 |
 | `celebrateMs` | `4800` | 庆祝动画时长 |
@@ -102,7 +103,8 @@ kun-like-pet/
 │   ├── host.js        # 网页版插件 Host 半（早期版本）
 │   └── client.js      # 网页版插件 Client 半（早期版本）
 ├── desktop/
-│   └── kunpet-desktop.ps1   # 系统级 WPF 透明置顶悬浮窗（当前主力）
+│   ├── kunpet-desktop.ps1   # 系统级 WPF 透明置顶悬浮窗（当前主力）
+│   └── play-voice.ps1       # 系统级语音播放（WMP COM / MCI，宿主调用）
 ├── assets/
 │   ├── spritesheet.webp         # 原始 8×9 精灵图（alpha 已丢失，仅存档）
 │   ├── spritesheet-clean.png    # 清理后的精灵图（透明背景、绿边已除，当前使用）
